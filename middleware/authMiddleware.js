@@ -1,0 +1,17 @@
+const jwt = require("jsonwebtoken");
+function requireAuth(req, res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ message: "Please log in first." });
+  try { req.user = jwt.verify(token, process.env.JWT_SECRET); next(); }
+  catch { return res.status(401).json({ message: "Session expired. Please log in again." }); }
+}
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== "admin") return res.status(403).json({ message: "Admin access only." });
+  next();
+}
+function requireTeacher(req, res, next) {
+  if (!["teacher", "admin"].includes(req.user?.role)) return res.status(403).json({ message: "Teacher or admin access only." });
+  next();
+}
+module.exports = { requireAuth, requireAdmin, requireTeacher };
